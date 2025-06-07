@@ -9,7 +9,7 @@ pipeline {
                 git 'https://github.com/anieto-unir/helloworld.git'
                 echo WORKSPACE
                 bat 'dir'
-                stash name:'code', includes:'**'
+                stash name: 'code', includes: '**'
             }
         }
 
@@ -47,7 +47,7 @@ pipeline {
 
                                 timeout /t 4 >nul
 
-                                start /B java -jar C:\\home\\agent2\\wiremock\\wiremock-standalone-3.3.1.jar --port 9090 --root-dir C:\\home\\agent2\\wiremock
+                                start /B java -jar C:\\home\\agent2\\wiremock\\wiremock-standalone-2.35.0.jar --port 9090 --root-dir C:\\home\\agent2\\wiremock
 
                                 timeout /t 15 >nul
 
