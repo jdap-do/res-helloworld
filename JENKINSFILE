@@ -6,59 +6,79 @@ pipeline {
     stages {
         stage('Get Code') {
             steps {
-                git 'https://github.com/anieto-unir/helloworld.git'
+                git 'https://github.com/jdap-do/res-helloworld.git'
                 echo WORKSPACE
                 bat 'dir'
-                stash name: 'code', includes: '**'
+                stash name:'code', includes:'**'
             }
         }
 
-        stage('Build') {
+        stage('Unit') {
+            agent { label 'agent1' }
             steps {
-                echo 'Eyyy, esto es Python. No hay que compilar nada!!!'
-            }
-        }
-
-        stage('Tests') {
-            parallel {
-                stage('Unit') {
-                    agent { label 'agent1' }
-                    steps {
-                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                            unstash name: 'code'
-                            bat '''
-                                dir
-                                set PYTHONPATH=%WORKSPACE%
-                                C:\\home\\agent1\\.local\\bin\\flake8 app test
-                                C:\\home\\agent1\\.local\\bin\\pytest.exe --junitxml=result-unit.xml test\\unit
-                            '''
-                            stash name: 'unit-res', includes: 'result-unit.xml'
-                        }
-                    }
-                }
-
-                stage('Rest') {
-                    agent { label 'agent2' }
-                    steps {
-                        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                            unstash name: 'code'
-                            bat '''
-                                set FLASK_APP=app/api.py
-                                start /B C:\\home\\agent2\\.local\\bin\\flask.exe run
-                                timeout /t 6 >nul
-                                start /B java -jar C:\\home\\agent2\\wiremock\\wiremock-jre8-standalone-2.28.0.jar --port 9090 --root-dir C:\\home\\agent2\\wiremock
-                                timeout /t 20 >nul
-                                set PYTHONPATH=%WORKSPACE%
-                                C:\\home\\agent2\\.local\\bin\\pytest.exe --junitxml=result-rest.xml test\\rest
-                            '''
-                            stash name: 'rest-res', includes: 'result-rest.xml'
-                        }
-                    }
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                    unstash name: 'code'
+                    bat '''
+                        dir
+                        set PYTHONPATH=%WORKSPACE%
+                        C:\home\agent1\.local\bin\pytest.exe --junitxml=result-unit.xml test\unit
+                    '''
+                    stash name: 'unit-res', includes: 'result-unit.xml'
                 }
             }
         }
 
-        stage('Results') {
+        stage('Rest') {
+            agent { label 'agent2' }
+            steps {
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                    unstash name: 'code'
+                    bat '''
+                        set FLASK_APP=app/api.py
+                        start /B C:\home\agent2\.local\bin\flask.exe run
+
+                        timeout /t 6
+
+                        start /B java -jar C:\home\agent2\wiremock\wiremock-jre8-standalone-2.28.0.jar --port 9090 --root-dir C:\home\agent2\wiremock
+
+                        timeout /t 20
+
+                        set PYTHONPATH=%WORKSPACE%
+                        C:\home\agent2\.local\bin\pytest.exe --junitxml=result-rest.xml test\rest
+                    '''
+                    stash name: 'rest-res', includes: 'result-rest.xml'
+                }
+            }
+        }
+
+        stage('Analisis estatico (flake8)') {
+            agent { label 'agent1' }
+            steps {
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                    unstash name: 'code'
+                    bat '''
+                        set PYTHONPATH=%WORKSPACE%
+                        C:\home\agent1\.local\bin\flake8 app test --exit-zero > flake8.log
+                    '''
+                    recordIssues tools: [flake8(pattern: 'flake8.log')]
+                }
+            }
+        }
+
+        stage('Analisis de Seguridad (bandit)') {
+            agent { label 'agent1' }
+            steps {
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                    unstash name: 'code'
+                    bat '''
+                        C:\Users\joeda\AppData\Local\Programs\Python\Python313\Scripts\bandit.exe -r app -f xml -o bandit.xml
+                    '''
+                    recordIssues tools: [bandit(pattern: 'bandit.xml')]
+                }
+            }
+        }
+
+        stage('Resultados') {
             steps {
                 unstash name: 'unit-res'
                 unstash name: 'rest-res'
