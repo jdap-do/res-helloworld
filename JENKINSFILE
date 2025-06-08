@@ -4,7 +4,8 @@ pipeline {
     options { skipDefaultCheckout() }
 
     stages {
-        stage('Get Code') {
+
+        stage('Obtener código') {
             steps {
                 git 'https://github.com/jdap-do/res-helloworld.git'
                 echo WORKSPACE
@@ -13,11 +14,11 @@ pipeline {
             }
         }
 
-        stage('Unit') {
+        stage('Pruebas Unitarias') {
             agent { label 'agent1' }
             steps {
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                    unstash name: 'code'
+                    unstash 'code'
                     bat '''
                         dir
                         set PYTHONPATH=%WORKSPACE%
@@ -28,21 +29,17 @@ pipeline {
             }
         }
 
-        stage('Rest') {
+        stage('Pruebas de integración (REST)') {
             agent { label 'agent2' }
             steps {
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                    unstash name: 'code'
+                    unstash 'code'
                     bat '''
                         set FLASK_APP=app/api.py
                         start /B C:/home/agent2/.local/bin/flask.exe run
-
                         timeout /t 6
-
                         start /B java -jar C:/home/agent2/wiremock/wiremock-jre8-standalone-2.28.0.jar --port 9090 --root-dir C:/home/agent2/wiremock
-
                         timeout /t 20
-
                         set PYTHONPATH=%WORKSPACE%
                         C:/home/agent2/.local/bin/pytest.exe --junitxml=result-rest.xml test/rest
                     '''
@@ -55,7 +52,7 @@ pipeline {
             agent { label 'agent1' }
             steps {
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                    unstash name: 'code'
+                    unstash 'code'
                     bat '''
                         set PYTHONPATH=%WORKSPACE%
                         C:/home/agent1/.local/bin/flake8 app test --exit-zero > flake8.log
@@ -69,7 +66,7 @@ pipeline {
             agent { label 'agent1' }
             steps {
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                    unstash name: 'code'
+                    unstash 'code'
                     bat '''
                         C:/Users/joeda/AppData/Local/Programs/Python/Python313/Scripts/bandit.exe -r app -f xml -o bandit.xml
                     '''
@@ -80,8 +77,8 @@ pipeline {
 
         stage('Resultados') {
             steps {
-                unstash name: 'unit-res'
-                unstash name: 'rest-res'
+                unstash 'unit-res'
+                unstash 'rest-res'
                 junit 'result*.xml'
             }
         }
