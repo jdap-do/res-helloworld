@@ -72,7 +72,7 @@ pipeline {
                     unstash 'fuentes'
                     bat "${BANDIT_PATH} -r app -f xml -o bandit.xml || exit 0"
                     recordIssues tools: [
-                        pyLint(name: 'Bandit', pattern: 'bandit.xml')
+                        bandit(pattern: 'bandit.xml')
                     ], qualityGates: [
                         [threshold: 2, type: 'TOTAL', unstable: true],
                         [threshold: 4, type: 'TOTAL', unstable: false]
