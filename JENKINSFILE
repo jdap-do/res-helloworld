@@ -70,10 +70,11 @@ pipeline {
                         C:/Users/joeda/AppData/Local/Programs/Python/Python313/Scripts/bandit.exe -r app -f xml -o bandit.xml
                     '''
                     recordIssues tools: [genericParser(
-                        id: 'bandit', name: 'Bandit',
+                        id: 'bandit',
+                        name: 'Bandit',
                         pattern: 'bandit.xml',
                         regularExpression: '<issue severity="(?<severity>.*?)" confidence="(?<confidence>.*?)" text="(?<message>.*?)" test_id="(?<category>.*?)".*?/>',
-                        example: '<issue severity="LOW" confidence="HIGH" text="Use of assert detected. The enclosed code will be removed when compiling to optimised byte code." test_id="B101" test_name="assert_used" filename="app/api.py" line_number="39" line_range="39" column_range="0"/>
+                        example: '<issue severity="LOW" confidence="HIGH" text="Use of assert detected." test_id="B101" test_name="assert_used" filename="app/api.py" line_number="39" line_range="39" column_range="0"/>'
                     )]
                 }
             }
