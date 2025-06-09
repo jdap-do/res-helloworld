@@ -36,14 +36,12 @@ pipeline {
                 withEnv(["PYTHONPATH=${WORKSPACE}", "FLASK_APP=app/api.py"]) {
                     catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                         unstash 'fuentes'
-                        
-                        // Opcional: copia wiremock si no existe
+
                         bat '''
                             if not exist wiremock\\wiremock-jre8-standalone-2.28.0.jar (
                                 echo Wiremock jar no encontrado
                             )
                         '''
-
                         bat 'start /B flask run'
                         bat 'start /B java -jar wiremock/wiremock-jre8-standalone-2.28.0.jar --port 9090 --root-dir wiremock'
                         bat 'ping 127.0.0.1 -n 30 >nul'
@@ -77,6 +75,20 @@ pipeline {
                         [threshold: 2, type: 'TOTAL', unstable: true],
                         [threshold: 4, type: 'TOTAL', unstable: false]
                     ]
+                }
+            }
+        }
+
+        stage('Cobertura (coverage)') {
+            agent { label 'agent1' }
+            steps {
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                    unstash 'fuentes'
+                    bat "pytest --cov=app --cov-report=xml --cov-branch"
+                    cobertura autoUpdateHealth: false, autoUpdateStability: false,
+                              coberturaReportFile: 'coverage.xml',
+                              failNoReports: true, lineCoverageTargets: '80, 50, 0',
+                              onlyStable: false, zoomCoverageChart: false
                 }
             }
         }
