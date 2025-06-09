@@ -89,7 +89,9 @@ pipeline {
 
                         archiveArtifacts artifacts: 'coverage.xml', onlyIfSuccessful: true
 
-                        recordCoverage tools: [cobertura(pattern: 'coverage.xml')]
+                        recordCoverage tools: [
+                            cobertura(pattern: 'coverage.xml')
+                        ]
                     }
                 }
             }
