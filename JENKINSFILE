@@ -86,9 +86,9 @@ pipeline {
                     catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                         unstash 'fuentes'
                         bat "pytest --cov=app --cov-report=xml --cov-branch test/unit"
-                        
-                        recordCoverage tools: [
-                            [adapter: 'CoverageAdapter', pattern: 'coverage.xml']
+
+                        recordIssues tools: [
+                            pythonCoverage(pattern: 'coverage.xml')
                         ]
                     }
                 }
