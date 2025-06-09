@@ -82,13 +82,15 @@ pipeline {
         stage('Cobertura (coverage)') {
             agent { label 'agent1' }
             steps {
-                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                    unstash 'fuentes'
-                    bat "pytest --cov=app --cov-report=xml --cov-branch"
-                    cobertura autoUpdateHealth: false, autoUpdateStability: false,
-                              coberturaReportFile: 'coverage.xml',
-                              failNoReports: true, lineCoverageTargets: '80, 50, 0',
-                              onlyStable: false, zoomCoverageChart: false
+                withEnv(["PYTHONPATH=${WORKSPACE}"]) {
+                    catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                        unstash 'fuentes'
+                        bat "pytest --cov=app --cov-report=xml --cov-branch"
+                        cobertura autoUpdateHealth: false, autoUpdateStability: false,
+                                coberturaReportFile: 'coverage.xml',
+                                failNoReports: true, lineCoverageTargets: '80, 50, 0',
+                                onlyStable: false, zoomCoverageChart: false
+                    }
                 }
             }
         }
