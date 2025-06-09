@@ -12,6 +12,11 @@ pipeline {
         stage('Obtener código') {
             agent { label 'master' }
             steps {
+                bat 'echo --- OBTENER CÓDIGO EN MASTER ---'
+                bat 'whoami'
+                bat 'hostname'
+                bat 'echo %WORKSPACE%'
+
                 deleteDir()
                 git url: 'https://github.com/jdap-do/res-helloworld.git', branch: 'master'
                 bat 'dir'
@@ -22,6 +27,11 @@ pipeline {
         stage('Pruebas Unitarias') {
             agent { label 'agent1' }
             steps {
+                bat 'echo --- PRUEBAS UNITARIAS EN AGENT1 ---'
+                bat 'whoami'
+                bat 'hostname'
+                bat 'echo %WORKSPACE%'
+
                 withEnv(["PYTHONPATH=${WORKSPACE}"]) {
                     catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                         unstash 'fuentes'
@@ -35,6 +45,11 @@ pipeline {
         stage('Pruebas de integración (REST)') {
             agent { label 'agent2' }
             steps {
+                bat 'echo --- PRUEBAS DE INTEGRACIÓN EN AGENT2 ---'
+                bat 'whoami'
+                bat 'hostname'
+                bat 'echo %WORKSPACE%'
+
                 withEnv(["PYTHONPATH=${WORKSPACE}", "FLASK_APP=app/api.py"]) {
                     catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                         unstash 'fuentes'
@@ -44,16 +59,9 @@ pipeline {
                                 echo Wiremock jar no encontrado
                             )
                         '''
-                        // Lanzar Flask con ruta explícita
                         bat 'start /B cmd /c "%PYTHON_EXE% -m flask run"'
-
-                        // Lanzar Wiremock
                         bat 'start /B java -jar wiremock/wiremock-jre8-standalone-2.28.0.jar --port 9090 --root-dir wiremock'
-
-                        // Esperar 10 segundos
                         bat 'ping 127.0.0.1 -n 10 >nul'
-
-                        // Validar que Flask responde antes de ejecutar tests (opcional pero útil)
                         bat '''
                             for /l %%x in (1, 1, 5) do (
                                 curl http://localhost:5000/ && goto ready
@@ -61,7 +69,6 @@ pipeline {
                             )
                             :ready
                         '''
-
                         bat "pytest --junitxml=result-rest.xml test/rest"
                         stash includes: 'result-rest.xml', name: 'rest'
                     }
@@ -72,6 +79,11 @@ pipeline {
         stage('Análisis estático (flake8)') {
             agent { label 'agent1' }
             steps {
+                bat 'echo --- ANÁLISIS ESTÁTICO EN AGENT1 ---'
+                bat 'whoami'
+                bat 'hostname'
+                bat 'echo %WORKSPACE%'
+
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     unstash 'fuentes'
                     bat "${FLAKE8_PATH} app test --exit-zero > flake8.log"
@@ -83,6 +95,11 @@ pipeline {
         stage('Análisis de seguridad (bandit)') {
             agent { label 'agent1' }
             steps {
+                bat 'echo --- ANÁLISIS DE SEGURIDAD EN AGENT1 ---'
+                bat 'whoami'
+                bat 'hostname'
+                bat 'echo %WORKSPACE%'
+
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     unstash 'fuentes'
                     bat "${BANDIT_PATH} -r app -f xml -o bandit.xml || exit 0"
@@ -99,6 +116,11 @@ pipeline {
         stage('Cobertura (coverage)') {
             agent { label 'agent1' }
             steps {
+                bat 'echo --- COBERTURA EN AGENT1 ---'
+                bat 'whoami'
+                bat 'hostname'
+                bat 'echo %WORKSPACE%'
+
                 withEnv(["PYTHONPATH=${WORKSPACE}"]) {
                     catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                         unstash 'fuentes'
@@ -113,6 +135,11 @@ pipeline {
         stage('Pruebas de rendimiento (JMeter)') {
             agent { label 'agent1' }
             steps {
+                bat 'echo --- PRUEBAS DE RENDIMIENTO EN AGENT1 ---'
+                bat 'whoami'
+                bat 'hostname'
+                bat 'echo %WORKSPACE%'
+
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     unstash 'fuentes'
                     bat "\"${JMETER_PATH}\" -n -t jmeter/testplan_completo.jmx -l jmeter/results.jtl"
@@ -125,6 +152,11 @@ pipeline {
         stage('Resultados') {
             agent { label 'master' }
             steps {
+                bat 'echo --- RESULTADOS EN MASTER ---'
+                bat 'whoami'
+                bat 'hostname'
+                bat 'echo %WORKSPACE%'
+
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     unstash 'unit'
                     unstash 'rest'
