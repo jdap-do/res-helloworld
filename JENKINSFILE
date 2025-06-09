@@ -6,6 +6,7 @@ pipeline {
         BANDIT_PATH = 'C:/Users/joeda/AppData/Local/Programs/Python/Python313/Scripts/bandit.exe'
         FLAKE8_PATH = 'C:/jenkins/tools/python/Scripts/flake8.exe'
         JMETER_PATH = 'C:/jmeter/apache-jmeter-5.6.3/apache-jmeter-5.6.3/bin/jmeter.bat'
+        WIREMOCK_JAR = 'C:/tools/wiremock/wiremock-jre8-standalone-2.28.0.jar'
     }
 
     stages {
@@ -16,7 +17,6 @@ pipeline {
                 bat 'whoami'
                 bat 'hostname'
                 bat 'echo %WORKSPACE%'
-
                 deleteDir()
                 git url: 'https://github.com/jdap-do/res-helloworld.git', branch: 'master'
                 bat 'dir'
@@ -31,7 +31,6 @@ pipeline {
                 bat 'whoami'
                 bat 'hostname'
                 bat 'echo %WORKSPACE%'
-
                 withEnv(["PYTHONPATH=${WORKSPACE}"]) {
                     catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                         unstash 'fuentes'
@@ -49,17 +48,17 @@ pipeline {
                 bat 'whoami'
                 bat 'hostname'
                 bat 'echo %WORKSPACE%'
-
                 withEnv(["PYTHONPATH=${WORKSPACE}", "FLASK_APP=app/api.py"]) {
                     catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                         unstash 'fuentes'
-                        bat '''
-                            if not exist wiremock\\wiremock-jre8-standalone-2.28.0.jar (
-                                echo Wiremock jar no encontrado
-                            )
-                        '''
                         bat 'start /B cmd /c "%PYTHON_EXE% -m flask run"'
-                        bat 'start /B java -jar wiremock/wiremock-jre8-standalone-2.28.0.jar --port 9090 --root-dir wiremock'
+                        bat """
+                            if exist "%WIREMOCK_JAR%" (
+                                start /B java -jar "%WIREMOCK_JAR%" --port 9090 --root-dir wiremock
+                            ) else (
+                                echo [WARN] Wiremock jar no se encontró en la ruta: %WIREMOCK_JAR%
+                            )
+                        """
                         bat 'ping 127.0.0.1 -n 10 >nul'
                         bat '''
                             for /l %%x in (1, 1, 5) do (
@@ -82,7 +81,6 @@ pipeline {
                 bat 'whoami'
                 bat 'hostname'
                 bat 'echo %WORKSPACE%'
-
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     unstash 'fuentes'
                     bat "${FLAKE8_PATH} app test --exit-zero > flake8.log"
@@ -98,7 +96,6 @@ pipeline {
                 bat 'whoami'
                 bat 'hostname'
                 bat 'echo %WORKSPACE%'
-
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     unstash 'fuentes'
                     bat "${BANDIT_PATH} -r app -f xml -o bandit.xml || exit 0"
@@ -119,7 +116,6 @@ pipeline {
                 bat 'whoami'
                 bat 'hostname'
                 bat 'echo %WORKSPACE%'
-
                 withEnv(["PYTHONPATH=${WORKSPACE}"]) {
                     catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                         unstash 'fuentes'
@@ -138,7 +134,6 @@ pipeline {
                 bat 'whoami'
                 bat 'hostname'
                 bat 'echo %WORKSPACE%'
-
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     unstash 'fuentes'
                     bat "\"${JMETER_PATH}\" -n -t jmeter/testplan_completo.jmx -l jmeter/results.jtl"
@@ -155,10 +150,11 @@ pipeline {
                 bat 'whoami'
                 bat 'hostname'
                 bat 'echo %WORKSPACE%'
-
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                    unstash 'unit'
-                    unstash 'rest'
+                    script {
+                        try { unstash 'unit' } catch (e) { echo "No se pudo recuperar 'unit': ${e}" }
+                        try { unstash 'rest' } catch (e) { echo "No se pudo recuperar 'rest': ${e}" }
+                    }
                     junit 'result-*.xml'
                 }
             }
