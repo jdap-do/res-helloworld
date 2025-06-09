@@ -86,10 +86,10 @@ pipeline {
                     catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                         unstash 'fuentes'
                         bat "pytest --cov=app --cov-report=xml --cov-branch test/unit"
-                        cobertura autoUpdateHealth: false, autoUpdateStability: false,
-                                coberturaReportFile: 'coverage.xml',
-                                failNoReports: true, lineCoverageTargets: '80, 50, 0',
-                                onlyStable: false, zoomCoverageChart: false
+                        
+                        recordCoverage tools: [
+                            [adapter: 'CoverageAdapter', pattern: 'coverage.xml']
+                        ]
                     }
                 }
             }
