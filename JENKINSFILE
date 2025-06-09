@@ -99,7 +99,7 @@ pipeline {
             steps {
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     unstash 'fuentes'
-                    bat "\"${JMETER_PATH}\" -n -t jmeter/testplan.jmx -l jmeter/results.jtl"
+                    bat "\"${JMETER_PATH}\" -n -t jmeter/testplan_completo.jmx -l jmeter/results.jtl"
                     archiveArtifacts artifacts: 'jmeter/results.jtl', onlyIfSuccessful: true
                     perfReport sourceDataFiles: 'jmeter/results.jtl'
                 }
