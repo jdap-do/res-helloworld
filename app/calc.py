@@ -6,7 +6,7 @@ class Calculator:
         self.check_types(x, y)
         return x + y
 
-    def substract(self, x, y):
+    def subtract(self, x, y):
         self.check_types(x, y)
         return x - y
 
