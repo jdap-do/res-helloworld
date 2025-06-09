@@ -87,7 +87,7 @@ pipeline {
                         unstash 'fuentes'
                         bat "pytest --cov=app --cov-report=xml --cov-branch test/unit"
                         archiveArtifacts artifacts: 'coverage.xml', onlyIfSuccessful: true
-                        recordCoverage tools: [cobertura(pattern: 'coverage.xml')]
+                        recordCoverage tools: [[id: 'cobertura', name: 'Cobertura', pattern: 'coverage.xml']]
                     }
                 }
             }
