@@ -85,7 +85,7 @@ pipeline {
                 withEnv(["PYTHONPATH=${WORKSPACE}"]) {
                     catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                         unstash 'fuentes'
-                        bat "pytest --cov=app --cov-report=xml --cov-branch"
+                        bat "pytest --cov=app --cov-report=xml --cov-branch test/unit"
                         cobertura autoUpdateHealth: false, autoUpdateStability: false,
                                 coberturaReportFile: 'coverage.xml',
                                 failNoReports: true, lineCoverageTargets: '80, 50, 0',
