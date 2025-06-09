@@ -30,10 +30,10 @@ def test_mul_route(client):
 def test_div_route(client):
     response = client.get("/calc/divide/10/2")
     assert response.status_code == 200
-    assert response.data.decode() == "5"
+    assert float(response.data.decode()) == 5.0
 
 
 def test_divide_by_zero(client):
     response = client.get("/calc/divide/10/0")
     assert response.status_code == 400
-    assert "error" in response.data.decode().lower()
+    assert "division by zero" in response.data.decode().lower()
