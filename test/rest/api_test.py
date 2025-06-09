@@ -1,39 +1,33 @@
-import http.client
-import os
-import unittest
-from urllib.request import urlopen
-
 import pytest
+from app.api import app
 
-BASE_URL = "http://localhost:5000"
-BASE_URL_MOCK = "http://localhost:9090"
-DEFAULT_TIMEOUT = 2  # in secs
+@pytest.fixture
+def client():
+    app.config['TESTING'] = True
+    with app.test_client() as client:
+        yield client
 
-@pytest.mark.api
-class TestApi(unittest.TestCase):
-    def setUp(self):
-        self.assertIsNotNone(BASE_URL, "URL no configurada")
-        self.assertTrue(len(BASE_URL) > 8, "URL no configurada")
+def test_add_route(client):
+    response = client.get('/add?a=3&b=2')
+    assert response.status_code == 200
+    assert response.data.decode() == '5'
 
-    def test_api_add(self):
-        url = f"{BASE_URL}/calc/add/1/2"
-        response = urlopen(url, timeout=DEFAULT_TIMEOUT)
-        self.assertEqual(
-            response.status, http.client.OK, f"Error en la petición API a {url}"
-        )
-        self.assertEqual(
-            response.read().decode(), "3", "ERROR ADD"
-        )
+def test_sub_route(client):
+    response = client.get('/sub?a=5&b=2')
+    assert response.status_code == 200
+    assert response.data.decode() == '3'
 
-    def test_api_sqrt(self):
-        url = f"{BASE_URL_MOCK}/calc/sqrt/64"
-        response = urlopen(url, timeout=DEFAULT_TIMEOUT)
-        self.assertEqual(
-            response.status, http.client.OK, f"Error en la petición API a {url}"
-        )
-        self.assertEqual(
-            response.read().decode(), "8", "ERROR SQRT"
-        )
+def test_mul_route(client):
+    response = client.get('/mul?a=3&b=4')
+    assert response.status_code == 200
+    assert response.data.decode() == '12'
 
-if __name__ == "__main__":  # pragma: no cover
-    unittest.main()
+def test_div_route(client):
+    response = client.get('/div?a=10&b=2')
+    assert response.status_code == 200
+    assert response.data.decode() == '5'
+
+def test_divide_by_zero(client):
+    response = client.get('/div?a=10&b=0')
+    assert response.status_code == 200
+    assert "error" in response.data.decode().lower()
